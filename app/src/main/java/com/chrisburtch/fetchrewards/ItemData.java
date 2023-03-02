@@ -1,8 +1,10 @@
 package com.chrisburtch.fetchrewards;
 
+import androidx.annotation.NonNull;
+
 import java.util.Comparator;
 
-public class itemData {
+public class ItemData {
     int id;
     int listID;
     String name;
@@ -34,14 +36,20 @@ public class itemData {
     //#endregion
 
     @Override
+    @NonNull
     public String toString(){
-        return "listID: "+listID+" name: "+name+" id: "+id;
+        return "listID: "+this.listID+" name: "+this.name+" id: "+this.id;
     }
 
-    static class SortByListIDAndName implements Comparator<itemData>{
-
+    static class SortByListIDAndName implements Comparator<ItemData>{
+        /*********************************************************************************
+         Purpose: Compare override.
+         Sort will start with ListID value (assumption made that there are only single digit ListID values)
+         Then will evaluate name length to ensure proper order (ex. 6 appears before 54)
+         Then will evaluate name value to ensure proper order (ex. 54 appears before 55)
+         *********************************************************************************/
         @Override
-        public int compare(itemData item1, itemData item2) {
+        public int compare(ItemData item1, ItemData item2) {
             int listIdCompare = item1.getListID() - item2.getListID();
             int nameLengthCompare = item1.getName().length() - item2.getName().length();
             int nameCompare  = item1.getName().compareTo(item2.getName());
