@@ -4,11 +4,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.Activity;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,6 +40,7 @@ public class MainActivity extends Activity implements IDataUpdateListener {
     RecyclerView recyclerView;
     TextView introTv;
     TextView countTextView;
+    LinearLayout loadingDialog;
 
     /*********************************************************************************
      Purpose: OnCreate Override. Setup UI.
@@ -48,6 +53,7 @@ public class MainActivity extends Activity implements IDataUpdateListener {
         getItemsBtn = (Button)findViewById(R.id.get_items);
         clearBtn = (Button)findViewById(R.id.clear);
         exitBtn = (Button)findViewById(R.id.exit);
+
         //For demonstration purposes - we will set an OnClickListener here
         exitBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -55,6 +61,10 @@ public class MainActivity extends Activity implements IDataUpdateListener {
                 exit();
             }
         });
+
+        //loading dialog
+        loadingDialog = (LinearLayout)findViewById(R.id.loadingLayout);
+        loadingDialog.setVisibility(View.GONE);
 
         //recylcerview infrastructure
         recyclerView = (RecyclerView)findViewById(R.id.recyclerview);
@@ -64,11 +74,14 @@ public class MainActivity extends Activity implements IDataUpdateListener {
 
         //TextViews
         countTextView = (TextView)findViewById(R.id.item_count_tv);
-        String countText = "Item count: "+adapter.getItemCount();
+        String countText =  getString(R.string.item_count)+adapter.getItemCount();
         countTextView.setText(countText);
         introTv = (TextView)findViewById(R.id.intro_textview);
-        String introText = "Tap \"GET ITEMS\" to begin"+"\n"+" Tap \"CLEAR\" to clear items"+"\n"+"Tap \"EXIT \" to exit app";
+        String introText = getString(R.string.intro_text);
         introTv.setText(introText);
+
+        //Loading dialog
+
 
     }
 
@@ -77,8 +90,12 @@ public class MainActivity extends Activity implements IDataUpdateListener {
      Parameter: View to associate to layout onClick behavior
     *********************************************************************************/
     public void getItems(View view){
-        introTv.setVisibility(View.GONE);
-        new JSONTask().execute();
+        if(isOnline()) {
+            introTv.setVisibility(View.GONE);
+            new JSONTask().execute();
+        }else{
+            Toast.makeText(this, getString(R.string.no_network), Toast.LENGTH_LONG).show();
+        }
 
     }
 
@@ -89,8 +106,6 @@ public class MainActivity extends Activity implements IDataUpdateListener {
     public void clear(View view){
         introTv.setVisibility(View.VISIBLE);
         adapter.clearDataList();
-        String countText = "Item count: "+adapter.getItemCount();
-        countTextView.setText(countText);
     }
 
     /*********************************************************************************
@@ -100,13 +115,19 @@ public class MainActivity extends Activity implements IDataUpdateListener {
         this.finish();
     }
 
+    public boolean isOnline() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
+
     /*********************************************************************************
      Purpose: OnDataUpdated override. Update the item counter view.
      Parameter: Updated list to get item count.
      *********************************************************************************/
     @Override
     public void OnDataUpdated(ArrayList<ItemData> list) {
-        String countText = "Item count: "+adapter.getItemCount();
+        String countText = getString(R.string.item_count)+adapter.getItemCount();
         countTextView.setText(countText);
     }
 
@@ -115,6 +136,14 @@ public class MainActivity extends Activity implements IDataUpdateListener {
     *********************************************************************************/
     private class JSONTask extends AsyncTask<Void, Void, String>{
         final String jsonAddress = "https://fetch-hiring.s3.amazonaws.com/hiring.json";
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            if(loadingDialog != null){
+                loadingDialog.setVisibility(View.VISIBLE);
+            }
+        }
 
         /*********************************************************************************
          Purpose: doInBackground override.
@@ -173,7 +202,7 @@ public class MainActivity extends Activity implements IDataUpdateListener {
             super.onPostExecute(s);
             if(s == null || s.isEmpty()){
                 //notify user of no results
-                Toast.makeText(getBaseContext(), "No data to display. Try again.",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getBaseContext(), getString(R.string.no_data_issue),Toast.LENGTH_SHORT).show();
                 return;
             }
             ArrayList<ItemData> list = new ArrayList<>();
@@ -181,11 +210,17 @@ public class MainActivity extends Activity implements IDataUpdateListener {
                 JSONArray baseJson = new JSONArray(s);
                 for(int i = 0; i < baseJson.length(); i++){
                     JSONObject item = baseJson.getJSONObject(i);
-                    int id = item.getInt("id");
-                    int listId = item.getInt("listId");
-                    String name = item.getString("name");
+                    int id = -1;
+                    int listId = -1;
+                    String name = "";
 
-                    if(!name.isEmpty() && name.compareToIgnoreCase("null") != 0) {
+                    //ensure value exists before loading
+                    if (item.has("id"))  id= item.getInt("id");
+                    if (item.has("listId")) listId = listId = item.getInt("listId");
+                    if (item.has("name")) name= item.getString("name");
+
+                    //filter the list here to limit the O(n) cost to sort
+                    if(!name.isEmpty() && name.compareToIgnoreCase("null") != 0 && id >= 0 && listId >= 0) {
                         ItemData data = new ItemData();
                         data.setId(id);
                         data.setListID(listId);
@@ -200,6 +235,10 @@ public class MainActivity extends Activity implements IDataUpdateListener {
                 }
             }catch (JSONException e){
                 Log.e(TAG,"JSON Error. Reason: "+e.getMessage(), e);
+            }
+
+            if(loadingDialog != null){
+                loadingDialog.setVisibility(View.GONE);
             }
         }
     }

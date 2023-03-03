@@ -38,7 +38,7 @@ public class ItemData {
     @Override
     @NonNull
     public String toString(){
-        return "listID: "+this.listID+" name: "+this.name+" id: "+this.id;
+        return "ListID: "+this.listID+" Name: "+this.name+" ID: "+this.id;
     }
 
     static class SortByListIDAndName implements Comparator<ItemData>{

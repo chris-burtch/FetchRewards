@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">FetchRewards</string>
+    <string name="intro_text">Tap \"GET ITEMS\" to begin""\n"" Tap \"CLEAR\" to clear items""\n""Tap \"EXIT \" to exit app</string>
+    <string name="item_count">Item count: </string>
+    <string name="no_data_issue">No data to display. Try again.</string>
+    <string name="get_items">Get Items</string>
+    <string name="clear">Clear</string>
+    <string name="exit">Exit</string>
+    <string name="list_id">List ID: </string>
+    <string name="id">ID: </string>
+    <string name="name">Name: </string>
+    <string name="no_network">No network connection. Please Try again when network is available</string>
+    <string name="loading_message">Loading data. Please wait…</string>
 </resources>
