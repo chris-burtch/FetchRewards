@@ -115,6 +115,9 @@ public class MainActivity extends Activity implements IDataUpdateListener {
         this.finish();
     }
 
+    /*********************************************************************************
+     Purpose: Verify network connectivity
+     *********************************************************************************/
     public boolean isOnline() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
